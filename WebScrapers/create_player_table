@@ -1,0 +1,62 @@
+
+-- Database: hockey
+
+-- DROP DATABASE hockey;
+
+CREATE DATABASE hockey
+  WITH OWNER = postgres
+       ENCODING = 'UTF8'
+       TABLESPACE = pg_default
+       LC_COLLATE = 'en_US.UTF-8'
+       LC_CTYPE = 'en_US.UTF-8'
+       CONNECTION LIMIT = -1;
+
+
+CREATE TABLE roster_players (
+player_id SERIAL PRIMARY KEY,
+number INT,
+name TEXT,
+age INT,
+height TEXT,
+weight INT,
+shot text,
+birthplace TEXT,
+birthday DATE,
+pos TEXT,
+team TEXT,
+updated DATE
+);
+
+CREATE TABLE daily_skater_stats (
+player_id INT,
+name TEXT,
+goals INT,
+assists INT,
+points INT,
+plus_minus INT,
+penalty_minutes INT,
+sog INT,
+blocks INT,
+hits INT,
+takeaways INT,
+giveaways INT,
+fo_win INT,
+fo_lost INT,
+fo_pct FLOAT,
+shifts INT,
+toi INT,
+date_played DATE,
+PRIMARY KEY (player_id, date_played)
+);
+
+CREATE TABLE daily_goalie_stats (
+player_id INT,
+name TEXT,
+shots_against INT,
+goals_against INT,
+saves INT,
+save_pct FLOAT,
+toi INT,
+date_played DATE,
+PRIMARY KEY (player_id, date_played)
+);

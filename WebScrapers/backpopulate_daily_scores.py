@@ -142,7 +142,16 @@ def make_inserts(frame, table_name):
 
 def run(baseUrl, d):
     cur_url = (baseUrl)
-    driver = webdriver.Chrome()
+    #profile = webdriver.ChromeOptions()
+    #profile.add_argument('--disable-extensions')
+    #profile.add_argument('--ash-disable-system-sounds')
+    #profile.add_argument('--agc-startup_min-volume 0')
+    #profile.add_argument('--mute-audio')
+    #driver = webdriver.Chrome(chrome_options=profile)
+    chromeOptions = webdriver.ChromeOptions()
+    prefs = {"profile.managed_default_content_settings.images":2}
+    chromeOptions.add_experimental_option("prefs",prefs)
+    driver = webdriver.Chrome(chrome_options=chromeOptions)
     driver.set_page_load_timeout(30)
     try:
         driver.get(cur_url)
@@ -275,7 +284,7 @@ def run(baseUrl, d):
 if __name__ == "__main__":
     # Put the argparser here
 
-    for i in range(6, 16):
+    for i in range(1, 30):
         print('*** Starting up ... ***')
         # The default url should be
         d = datetime.date.today() - datetime.timedelta(days=i)

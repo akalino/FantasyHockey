@@ -10,6 +10,7 @@ import datetime
 import re
 import time
 import sqlalchemy
+import argparse
 from string import digits
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -148,15 +149,18 @@ def run(baseUrl, d):
     #profile.add_argument('--agc-startup_min-volume 0')
     #profile.add_argument('--mute-audio')
     #driver = webdriver.Chrome(chrome_options=profile)
-    chromeOptions = webdriver.ChromeOptions()
-    prefs = {"profile.managed_default_content_settings.images":2}
-    chromeOptions.add_experimental_option("prefs",prefs)
-    driver = webdriver.Chrome(chrome_options=chromeOptions)
-    driver.set_page_load_timeout(30)
+    chrome_options = webdriver.ChromeOptions()
+    prefs = {"profile.managed_default_content_settings.images": 2}
+    chrome_options.add_experimental_option("prefs", prefs)
+    driver = webdriver.Chrome(chrome_options=chrome_options)
+    driver.set_page_load_timeout(45)
     try:
         driver.get(cur_url)
     except TimeoutException:
         print '*** Skipped the url: {url} ***'.format(url=baseUrl)
+        with open('/home/alkal/Documents/FantasyHockey/WebScrapers/JobLogs/back_err.txt', "ab") as errors:
+            errors.write(baseUrl)
+
         driver.close()
 
     source = driver.page_source
@@ -165,6 +169,7 @@ def run(baseUrl, d):
 
     score_data = soup.findAll('div',
                               {'class': 'yom-mod yom-app yom-sports-scoreboard yom-scores daily-fantasy-bridge nhl '})
+    # Need to add logic for non-game days
     score_soup = BeautifulSoup(str(score_data[0]), 'lxml')
     homeUrl = 'http://sports.yahoo.com'
     get_game_urls = score_soup.findAll('tr', {'class': 'game link'})
@@ -177,12 +182,18 @@ def run(baseUrl, d):
 
     for i in game_links:
         cur_url = i
-        driver = webdriver.Chrome()
-        driver.set_page_load_timeout(30)
+        chrome_options = webdriver.ChromeOptions()
+        prefs = {"profile.managed_default_content_settings.images": 2}
+        chrome_options.add_experimental_option("prefs", prefs)
+        driver = webdriver.Chrome(chrome_options=chrome_options)
+        driver.set_page_load_timeout(45)
         try:
             driver.get(cur_url)
         except TimeoutException:
             print '*** Skipped game url: {game} ***'.format(game=cur_url)
+            # Write skipped games to a file to be recovered later
+            with open('/home/alkal/Documents/FantasyHockey/WebScrapers/JobLogs/back_err.txt', "ab") as errors:
+                errors.write(cur_url)
             driver.close()
 
         source = driver.page_source
@@ -190,14 +201,15 @@ def run(baseUrl, d):
         time.sleep(20)
         driver.close()
 
-        player_names = soup.find_all(attrs={"class":"athlete", "scope":"row"})
+        player_names = soup.find_all(attrs={"class": "athlete", "scope": "row"})
         player_name_list = [get_name(str(j)) for j in player_names]
+        print player_name_list
 
         # goalie stats
         shots_against = soup.find_all(attrs={"title": "Shots Against"})
         shots_against_list = filter(exists, [get_parsed_stats(str(j), 'Shots Against') for j in shots_against])
 
-        goals_against = soup.find_all(attrs={"title":" Goals Against"})
+        goals_against = soup.find_all(attrs={"title": " Goals Against"})
         goals_against_list = filter(exists, [get_parsed_stats(str(j), 'Goals Against') for j in goals_against])
 
         saves = soup.find_all(attrs={"title": "Saves"})
@@ -283,13 +295,24 @@ def run(baseUrl, d):
 
 if __name__ == "__main__":
     # Put the argparser here
+    parser = argparse.ArgumentParser(prog='backfill_stats',
+                                     description='Pulls in stats for a given day')
+    parser.add_argument('-d', '--date', nargs='?', type=str, required=True,
+                        help='The date to pull stats for',
+                        dest='date')
+    print ('*** Starting up... ***')
+    args = parser.parse_args()
+    bf_date = args.date
+    base_url = 'http://sports.yahoo.com/nhl/scoreboard/?date={backfill}&conf='.format(backfill=bf_date)
+    run(base_url, bf_date)
+    print('*** Backfilled for {backfill} ***'.format(backfill=bf_date))
 
-    for i in range(1, 30):
-        print('*** Starting up ... ***')
-        # The default url should be
-        d = datetime.date.today() - datetime.timedelta(days=i)
-        d = d.strftime('%Y-%m-%d')
-        # A backfill url will look like
-        baseUrl = 'http://sports.yahoo.com/nhl/scoreboard/?date={backfill}&conf='.format(backfill=d)
-        run(baseUrl, d)
-        print('*** Backfilled for {backfill} ***'.format(backfill=d))
+    # for i in range(17, 600):
+    #     print('*** Starting up ... ***')
+    #     # The default url should be
+    #     d = datetime.date.today() - datetime.timedelta(days=i)
+    #     d = d.strftime('%Y-%m-%d')
+    #     # A backfill url will look like
+    #     baseUrl = 'http://sports.yahoo.com/nhl/scoreboard/?date={backfill}&conf='.format(backfill=d)
+    #     run(baseUrl, d)
+    #     print('*** Backfilled for {backfill} ***'.format(backfill=d))

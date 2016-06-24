@@ -1,4 +1,3 @@
-#! /home/alkal/anaconda/bin python
 """
 Project Name: WebScrapers 
 @author: alkal 
@@ -139,9 +138,12 @@ def make_inserts(frame, table_name):
 
 
 def run(baseUrl):
-    cur_url = (baseUrl)
-    driver = webdriver.Chrome()
-    driver.set_page_load_timeout(30)
+    cur_url = baseUrl
+    chrome_options = webdriver.ChromeOptions()
+    prefs = {"profile.managed_default_content_settings.images": 2}
+    chrome_options.add_experimental_option("prefs", prefs)
+    driver = webdriver.Chrome(chrome_options=chrome_options)
+    driver.set_page_load_timeout(45)
     try:
         driver.get(cur_url)
     except TimeoutException:
@@ -166,7 +168,11 @@ def run(baseUrl):
 
     for i in game_links:
         cur_url = i
-        driver = webdriver.Chrome()
+        chrome_options = webdriver.ChromeOptions()
+        prefs = {"profile.managed_default_content_settings.images": 2}
+        chrome_options.add_experimental_option("prefs", prefs)
+        driver = webdriver.Chrome(chrome_options=chrome_options)
+        driver.set_page_load_timeout(45)
         driver.set_page_load_timeout(30)
         try:
             driver.get(cur_url)
@@ -178,7 +184,7 @@ def run(baseUrl):
         soup = BeautifulSoup(source, 'lxml')
         driver.close()
 
-        player_names = soup.find_all(attrs={"class":"athlete", "scope":"row"})
+        player_names = soup.find_all(attrs={"class": "athlete", "scope": "row"})
         player_name_list = [get_name(str(j)) for j in player_names]
 
         # goalie stats
@@ -277,4 +283,4 @@ if __name__ == "__main__":
     # A backfill url will look like
     # http://sports.yahoo.com/nhl/scoreboard/?date=2016-04-26&conf=
     run(baseUrl)
-    print('*** Finished daily job ***')
+    print('*** Finished job for {d} ***'.format(d=datetime.date.today().strftime('%Y-%m-%d')))
